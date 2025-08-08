@@ -1,0 +1,820 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="system">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Advanced Work Hours Calculator</title>
+  <style>
+    /* ============ Design Tokens ============ */
+    :root {
+      --bg: #0b0f16;
+      --bg-accent: radial-gradient(1200px 800px at 20% -10%, #15233a 0%, transparent 60%),
+                   radial-gradient(1000px 600px at 120% 20%, #1c2440 0%, transparent 60%),
+                   linear-gradient(135deg, #0b0f16 0%, #0f1a2b 100%);
+      --text: #e7ecf3;
+      --muted: #a9b6c9;
+      --card: rgba(14, 19, 29, 0.7);
+      --card-elev: rgba(18, 24, 38, 0.6);
+      --border: rgba(255, 255, 255, 0.08);
+      --primary-1: #58c4a9;
+      --primary-2: #4eb3f7;
+      --primary-3: #8b6ff3;
+      --ok: #4caf50;
+      --warn: #ffb020;
+      --alert: #ef5350;
+      --chip-ok-bg: rgba(76, 175, 80, 0.15);
+      --chip-ok-fg: #c9f7cf;
+      --chip-warn-bg: rgba(255, 176, 32, 0.15);
+      --chip-warn-fg: #ffe4b3;
+      --chip-info-bg: rgba(78, 179, 247, 0.15);
+      --chip-info-fg: #caeaff;
+      --chip-ot-bg: rgba(239, 83, 80, 0.15);
+      --chip-ot-fg: #ffc7c5;
+      --shadow-1: 0 10px 30px rgba(0, 0, 0, 0.35);
+      --shadow-2: 0 20px 45px rgba(0, 0, 0, 0.45);
+      --ring: 0 0 0 2px rgba(78, 179, 247, 0.35), 0 0 0 6px rgba(78,179,247,0.15);
+
+      --surface-blur: saturate(140%) blur(8px);
+      --radius-lg: 16px;
+      --radius-md: 12px;
+      --radius-sm: 10px;
+
+      --button-grad: linear-gradient(135deg, var(--primary-2), var(--primary-3));
+      --button-grad-hover: linear-gradient(135deg, #6bc2ff, #a391ff);
+      --focus-outline: 2px solid rgba(78, 179, 247, 0.55);
+    }
+
+    /* Light theme */
+    @media (prefers-color-scheme: light) {
+      :root {
+        --bg: #f7f9fc;
+        --bg-accent: radial-gradient(1000px 700px at -10% -20%, #e9f3ff 0%, transparent 60%),
+                     radial-gradient(900px 600px at 120% 10%, #f3ecff 0%, transparent 60%),
+                     linear-gradient(135deg, #f7f9fc 0%, #eef3fb 100%);
+        --text: #142233;
+        --muted: #4e5d73;
+        --card: rgba(255, 255, 255, 0.75);
+        --card-elev: rgba(255, 255, 255, 0.9);
+        --border: rgba(16, 33, 61, 0.08);
+        --chip-ok-fg: #14501a;
+        --chip-warn-fg: #7a4d00;
+        --chip-info-fg: #0b3f62;
+        --chip-ot-fg: #6b1111;
+        --surface-blur: saturate(160%) blur(12px);
+        --button-grad: linear-gradient(135deg, #2aa4f4, #7a5af8);
+        --button-grad-hover: linear-gradient(135deg, #4fb6ff, #9a82fa);
+      }
+    }
+
+    /* Manual theme override using data-theme attr */
+    html[data-theme="dark"] {
+      color-scheme: dark;
+    }
+    html[data-theme="light"] {
+      color-scheme: light;
+      --bg: #ffffff;
+      --bg-accent: radial-gradient(1200px 800px at 10% -10%, #eef6ff 0%, transparent 60%),
+                   radial-gradient(1000px 700px at 120% 20%, #f6f1ff 0%, transparent 60%),
+                   linear-gradient(135deg, #f9fbff 0%, #eef3fb 100%);
+      --text: #142233;
+      --muted: #4e5d73;
+      --card: rgba(255, 255, 255, 0.85);
+      --card-elev: rgba(255, 255, 255, 0.98);
+      --border: rgba(16, 33, 61, 0.08);
+      --surface-blur: saturate(160%) blur(10px);
+      --button-grad: linear-gradient(135deg, #2aa4f4, #7a5af8);
+      --button-grad-hover: linear-gradient(135deg, #4fb6ff, #9a82fa);
+      --chip-ok-bg: rgba(76, 175, 80, 0.12);
+      --chip-warn-bg: rgba(255, 176, 32, 0.12);
+      --chip-info-bg: rgba(78, 179, 247, 0.12);
+      --chip-ot-bg: rgba(239, 83, 80, 0.12);
+    }
+
+    /* Global reset */
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body {
+      margin: 0;
+      font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Inter, Arial, sans-serif;
+      color: var(--text);
+      background: var(--bg);
+      background-image: var(--bg-accent);
+      background-attachment: fixed;
+      overflow-x: hidden;
+    }
+
+    /* Subtle animated backdrop */
+    .backdrop-orbits::before,
+    .backdrop-orbits::after {
+      content: "";
+      position: fixed;
+      inset: -20%;
+      background:
+        radial-gradient(1200px 800px at 20% 10%, rgba(88,196,169,0.12), transparent 60%),
+        radial-gradient(900px 700px at 80% 30%, rgba(78,179,247,0.10), transparent 65%),
+        radial-gradient(700px 500px at 40% 80%, rgba(139,111,243,0.10), transparent 70%);
+      pointer-events: none;
+      filter: blur(30px);
+      z-index: 0;
+      animation: orbitMove 40s linear infinite;
+    }
+    .backdrop-orbits::after {
+      animation-duration: 60s;
+      transform: scale(1.2);
+      opacity: 0.6;
+    }
+    @keyframes orbitMove {
+      0% { transform: translate3d(0,0,0) rotate(0deg); }
+      50% { transform: translate3d(1.5%, -1.5%, 0) rotate(180deg); }
+      100% { transform: translate3d(0,0,0) rotate(360deg); }
+    }
+    @media (prefers-reduced-motion: reduce) {
+      .backdrop-orbits::before, .backdrop-orbits::after { animation: none; }
+    }
+
+    /* Layout */
+    .page {
+      position: relative;
+      z-index: 1;
+      padding: clamp(20px, 4vw, 32px) 20px clamp(36px, 6vw, 48px);
+      min-height: 100%;
+      display: grid;
+      place-items: start center;
+    }
+    .container {
+      width: 100%;
+      max-width: 860px;
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      box-shadow: var(--shadow-1);
+      backdrop-filter: var(--surface-blur);
+      -webkit-backdrop-filter: var(--surface-blur);
+      overflow: hidden;
+      transform: translateY(8px);
+      opacity: 0;
+      animation: cardIn 700ms cubic-bezier(.2,.8,.2,1) 120ms forwards;
+    }
+    @keyframes cardIn {
+      to { transform: none; opacity: 1; }
+    }
+
+    /* Header */
+    .header {
+      position: relative;
+      padding: clamp(20px, 3.6vw, 28px) clamp(20px, 4vw, 36px);
+      background: linear-gradient(135deg, rgba(88,196,169,0.15), rgba(139,111,243,0.18));
+      border-bottom: 1px solid var(--border);
+    }
+    .header .title-row {
+      display: flex; align-items: center; gap: 12px; justify-content: space-between;
+    }
+    .header h1 {
+      font-size: clamp(1.25rem, 2.6vw, 1.8rem);
+      margin: 0;
+      letter-spacing: 0.2px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .header h1 .logo {
+      width: 34px; height: 34px; border-radius: 10px;
+      background: conic-gradient(from 0deg, var(--primary-2), var(--primary-3), var(--primary-2));
+      box-shadow: 0 8px 20px rgba(78,179,247,0.25), inset 0 0 20px rgba(255,255,255,0.25);
+      position: relative; overflow: hidden;
+    }
+    .header h1 .logo::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: radial-gradient(120px 60px at 20% 20%, rgba(255,255,255,0.35), transparent 40%);
+      transform: translateY(-10%);
+    }
+    .header p {
+      margin: 8px 0 0;
+      font-size: 0.98rem;
+      color: var(--muted);
+    }
+
+    /* Theme toggle */
+    .theme-toggle {
+      display: inline-flex; align-items: center; gap: 8px;
+      border: 1px solid var(--border);
+      background: var(--card-elev);
+      color: var(--text);
+      padding: 10px 12px;
+      border-radius: 999px;
+      cursor: pointer;
+      box-shadow: var(--shadow-1);
+      transition: transform .18s ease, box-shadow .18s ease, background .2s ease;
+      user-select: none;
+    }
+    .theme-toggle:hover { transform: translateY(-1px); box-shadow: var(--shadow-2); }
+    .theme-toggle .dot {
+      width: 10px; height: 10px; border-radius: 999px;
+      background: linear-gradient(135deg, var(--primary-2), var(--primary-3));
+      box-shadow: 0 0 0 3px rgba(78,179,247,0.2);
+    }
+    .theme-toggle .label { font-size: 12px; letter-spacing: .02em; opacity: .85; }
+    .header-actions { display: flex; align-items: center; gap: 10px; }
+
+    /* Current time panel */
+    .current-time {
+      background: var(--card-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      padding: 14px 16px;
+      text-align: left;
+      display: grid; grid-template-columns: 1fr auto; gap: 8px;
+      box-shadow: var(--shadow-1);
+      transition: box-shadow .2s ease;
+      margin-bottom: clamp(16px, 3.2vw, 24px); /* ADDED: clear space below current time */
+    }
+    .current-time:hover { box-shadow: var(--shadow-2); }
+    .current-time-label {
+      font-weight: 600; color: var(--muted); font-size: 0.82rem;
+      letter-spacing: .04em; text-transform: uppercase;
+    }
+    .current-time-value {
+      grid-column: 1 / -1;
+      font-size: clamp(1.25rem, 3.5vw, 1.6rem);
+      font-weight: 800;
+      letter-spacing: 0.04em;
+      background: linear-gradient(135deg, #d5e8ff, #e6ddff);
+      -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+
+    /* Form area */
+    .form-container {
+      padding: clamp(20px, 3.6vw, 26px) clamp(20px, 4vw, 36px) clamp(28px, 5vw, 34px);
+      display: grid;
+      gap: clamp(22px, 3.6vw, 28px); /* INCREASED: more breathing room between blocks */
+    }
+    .form-grid {
+      display: grid;
+      gap: clamp(18px, 3.2vw, 24px); /* INCREASED: more space between inputs */
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+    @media (max-width: 740px) {
+      .form-grid { grid-template-columns: 1fr; }
+    }
+    .form-group {
+      display: grid; gap: 8px;
+    }
+    .form-group label {
+      font-weight: 600;
+      color: var(--text);
+      font-size: 0.98rem;
+    }
+    .input, .select {
+      width: 100%;
+      padding: 12px 14px;
+      border: 1.5px solid var(--border);
+      border-radius: 10px;
+      font-size: 1rem;
+      color: var(--text);
+      background: rgba(255,255,255,0.02);
+      outline: none;
+      transition: border-color .2s ease, box-shadow .2s ease, background .2s ease;
+      line-height: 1.25; /* helps prevent visual squish */
+    }
+    .input::placeholder { color: color-mix(in oklab, var(--muted) 75%, transparent); }
+    .input:focus, .select:focus { box-shadow: var(--ring); background: rgba(255,255,255,0.04); }
+
+    .calculate-btn {
+      width: 100%;
+      border: none;
+      padding: 14px 16px;
+      border-radius: 12px;
+      font-size: 1.05rem; font-weight: 700;
+      color: white;
+      background: var(--button-grad);
+      cursor: pointer;
+      box-shadow: 0 14px 24px rgba(78,179,247,0.25);
+      transition: transform .16s ease, box-shadow .16s ease, background .2s ease;
+      margin-top: clamp(14px, 3vw, 20px); /* ADDED: space above button (separates from dropdown) */
+    }
+    .calculate-btn:hover { transform: translateY(-1.5px); background: var(--button-grad-hover); box-shadow: 0 20px 36px rgba(78,179,247,0.28); }
+    .calculate-btn:active { transform: translateY(0); }
+
+    /* Results */
+    .results {
+      margin-top: 6px;
+      padding: clamp(18px, 3.6vw, 22px) clamp(18px, 4vw, 28px);
+      background: var(--card-elev);
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      box-shadow: var(--shadow-1);
+      opacity: 0; transform: translateY(6px);
+      transition: opacity .35s ease, transform .35s ease;
+    }
+    .results.visible { opacity: 1; transform: none; }
+
+    .result-section {
+      margin-bottom: clamp(14px, 3vw, 20px);
+      padding-bottom: clamp(10px, 2.4vw, 16px);
+      border-bottom: 1px dashed var(--border);
+    }
+    .result-section:last-child { margin-bottom: 0; border-bottom: none; }
+    .result-section-title {
+      font-size: 0.95rem; font-weight: 800; color: var(--muted);
+      margin-bottom: 12px; letter-spacing: .08em; text-transform: uppercase;
+    }
+    .result-item {
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 10px 0;
+      gap: 12px;
+    }
+    .result-label { font-weight: 600; color: var(--text); }
+    .result-value { font-weight: 800; color: #dfe7ff; letter-spacing: .02em; }
+
+    /* Progress bar */
+    .progress {
+      margin: 8px 0 12px;
+      width: 100%;
+      height: 10px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.08);
+      overflow: hidden;
+      border: 1px solid var(--border);
+    }
+    .progress-bar {
+      height: 100%;
+      width: 0%;
+      background: linear-gradient(90deg, var(--primary-2), var(--primary-3), var(--primary-1));
+      background-size: 200% 100%;
+      animation: progressFlow 2.4s linear infinite;
+      transition: width .45s cubic-bezier(.2,.8,.2,1);
+    }
+    @keyframes progressFlow {
+      0% { background-position: 0% 50%; }
+      100% { background-position: 200% 50%; }
+    }
+
+    /* Chips */
+    .day-type {
+      display: inline-block;
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-size: 0.85rem;
+      font-weight: 800;
+      letter-spacing: .02em;
+      border: 1px solid var(--border);
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.05);
+    }
+    .half-day { background: var(--chip-warn-bg); color: var(--chip-warn-fg); }
+    .more-than-half { background: var(--chip-info-bg); color: var(--chip-info-fg); }
+    .full-day { background: var(--chip-ok-bg); color: var(--chip-ok-fg); }
+    .overtime { background: var(--chip-ot-bg); color: var(--chip-ot-fg); }
+
+    .highlight {
+      background: var(--chip-warn-bg);
+      color: var(--chip-warn-fg);
+      padding: 6px 12px;
+      border-radius: 999px;
+      font-weight: 800;
+      border: 1px solid var(--border);
+    }
+
+    .error {
+      color: #ffcdcf;
+      background: rgba(239, 83, 80, 0.18);
+      border: 1px solid rgba(239, 83, 80, 0.3);
+      padding: 12px 14px;
+      border-radius: 10px;
+      margin-top: 12px;
+      box-shadow: var(--shadow-1);
+      transform-origin: left;
+      animation: none;
+    }
+    .error.show { animation: shake .4s ease; }
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      25% { transform: translateX(-5px); }
+      50% { transform: translateX(5px); }
+      75% { transform: translateX(-3px); }
+    }
+
+    .hidden { display: none; }
+
+    /* Footer note */
+    .footer-note {
+      text-align: center; color: var(--muted);
+      font-size: 12px; margin: 16px 0 6px;
+    }
+  </style>
+</head>
+<body class="backdrop-orbits">
+  <div class="page">
+    <div class="container" role="region" aria-label="Advanced Work Hours Calculator">
+      <div class="header">
+        <div class="title-row">
+          <h1>
+            <span class="logo" aria-hidden="true"></span>
+            Advanced Work Hours Calculator
+          </h1>
+          <div class="header-actions">
+            <button id="themeToggle" class="theme-toggle" type="button" aria-label="Toggle color theme" title="Toggle theme">
+              <span class="dot" aria-hidden="true"></span>
+              <span id="themeLabel" class="label">System</span>
+            </button>
+          </div>
+        </div>
+        <p>Track progress, estimate completion, and visualize your day at a glance.</p>
+      </div>
+
+      <div class="form-container">
+        <div class="current-time" aria-live="polite">
+          <div class="current-time-label">Current Time</div>
+          <div id="currentTime" class="current-time-value">--:--:--</div>
+        </div>
+
+        <form id="workCalculatorForm" novalidate>
+          <div class="form-grid">
+            <div class="form-group">
+              <label for="completedHours">Hours Already Completed (HH:MM)</label>
+              <input class="input" type="text" id="completedHours" placeholder="e.g., 5:33" pattern="[0-9]{1,2}:[0-9]{2}" required />
+            </div>
+
+            <div class="form-group">
+              <label for="lastLogTime">Last Clock-in Time</label>
+              <input class="input" type="text" id="lastLogTime" placeholder="e.g., 3:12 PM or 15:12" required />
+            </div>
+
+            <div class="form-group">
+              <label for="targetHours">Target Working Hours</label>
+              <select class="select" id="targetHours" aria-label="Target working hours">
+                <option value="6">6 Hours</option>
+                <option value="7">7 Hours</option>
+                <option value="8" selected>8 Hours</option>
+                <option value="9">9 Hours</option>
+                <option value="10">10 Hours</option>
+              </select>
+            </div>
+          </div>
+
+          <button type="submit" class="calculate-btn">Calculate Work Hours</button>
+        </form>
+
+        <div id="error" class="error hidden" role="alert"></div>
+
+        <div id="results" class="results hidden" aria-live="polite">
+          <div class="result-section">
+            <div class="result-section-title">Work Status</div>
+            <div class="progress" aria-label="Overall progress">
+              <div id="progressBar" class="progress-bar" aria-valuemin="0" aria-valuemax="100" aria-valuenow="0" role="progressbar"></div>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Day Status</span>
+              <span id="dayType" class="day-type">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Overall Progress</span>
+              <span id="percentage" class="result-value">0%</span>
+            </div>
+          </div>
+
+          <div class="result-section">
+            <div class="result-section-title">Current Session</div>
+            <div class="result-item">
+              <span class="result-label">Last Clock-in</span>
+              <span id="lastLog24" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Hours Since Clock-in</span>
+              <span id="hoursSinceClockIn" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Total Hours Now</span>
+              <span id="totalHoursNow" class="result-value">—</span>
+            </div>
+          </div>
+
+          <div class="result-section">
+            <div class="result-section-title">Completion Details</div>
+            <div class="result-item">
+              <span class="result-label">Remaining Hours Needed</span>
+              <span id="remainingHours" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Time to Stay in Office</span>
+              <span id="timeToStay" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Will Complete At</span>
+              <span id="completionTime" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Full Completion</span>
+              <span id="completionDateTime" class="result-value">—</span>
+            </div>
+          </div>
+
+          <div id="overtimeSection" class="result-section hidden">
+            <div class="result-section-title">Overtime Information</div>
+            <div class="result-item">
+              <span class="result-label">Overtime Hours</span>
+              <span id="overtimeHours" class="result-value">—</span>
+            </div>
+            <div class="result-item">
+              <span class="result-label">Status</span>
+              <span class="highlight">Target Already Achieved!</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="footer-note">Tip: Enter completed HH:MM and your last clock‑in time to project your finish time.</div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Theme handling (System / Light / Dark cycle)
+    (function themeInit() {
+      const html = document.documentElement;
+      const btn = document.getElementById('themeToggle');
+      const label = document.getElementById('themeLabel');
+
+      const stored = localStorage.getItem('awhc-theme');
+      const sysPrefDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+
+      function apply(theme) {
+        // theme: 'system' | 'light' | 'dark'
+        html.setAttribute('data-theme', theme === 'system' ? (sysPrefDark ? 'dark' : 'light') : theme);
+        localStorage.setItem('awhc-theme', theme);
+        label.textContent = theme[0].toUpperCase() + theme.slice(1);
+      }
+
+      // initial
+      apply(stored || 'system');
+
+      // update on system change if using system
+      if (window.matchMedia) {
+        window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', () => {
+          const current = localStorage.getItem('awhc-theme') || 'system';
+          if (current === 'system') apply('system');
+        });
+      }
+
+      // click to cycle: system -> light -> dark -> system
+      btn.addEventListener('click', () => {
+        const current = localStorage.getItem('awhc-theme') || 'system';
+        const next = current === 'system' ? 'light' : current === 'light' ? 'dark' : 'system';
+        apply(next);
+      });
+    })();
+
+    class AdvancedWorkHoursCalculator {
+      constructor() {
+        this.form = document.getElementById('workCalculatorForm');
+        this.errorDiv = document.getElementById('error');
+        this.resultsDiv = document.getElementById('results');
+        this.currentTimeElement = document.getElementById('currentTime');
+        this.progressBar = document.getElementById('progressBar');
+
+        this.updateCurrentTime();
+        this.bindEvents();
+
+        // Update current time every second
+        setInterval(() => this.updateCurrentTime(), 1000);
+      }
+
+      updateCurrentTime() {
+        const now = new Date();
+        this.currentTimeElement.textContent = now.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          second: '2-digit',
+          hour12: true
+        });
+      }
+
+      bindEvents() {
+        this.form.addEventListener('submit', (e) => {
+          e.preventDefault();
+          this.calculate();
+        });
+      }
+
+      timeToMinutes(timeStr) {
+        const [hours, minutes] = timeStr.split(':').map(Number);
+        return hours * 60 + minutes;
+      }
+
+      minutesToTime(minutes) {
+        const hours = Math.floor(Math.abs(minutes) / 60);
+        const mins = Math.abs(minutes) % 60;
+        const sign = minutes < 0 ? '-' : '';
+        return `${sign}${hours}:${mins.toString().padStart(2, '0')}`;
+      }
+
+      parseTimeWithAmPm(timeStr) {
+        timeStr = timeStr.trim();
+
+        const ampmRegex = /(AM|PM)/i;
+        if (ampmRegex.test(timeStr)) {
+          const [time, period] = timeStr.split(/\s+/);
+          const [hours, minutes] = time.split(':').map(Number);
+
+          let hour24 = hours;
+          if (period.toUpperCase() === 'PM' && hours !== 12) {
+            hour24 += 12;
+          } else if (period.toUpperCase() === 'AM' && hours === 12) {
+            hour24 = 0;
+          }
+
+          return new Date(2000, 0, 1, hour24, minutes);
+        } else {
+          const [hours, minutes] = timeStr.split(':').map(Number);
+          return new Date(2000, 0, 1, hours, minutes);
+        }
+      }
+
+      determineDayType(completedMinutes, targetMinutes) {
+        const halfDayThreshold = targetMinutes / 2;
+
+        if (completedMinutes >= targetMinutes) {
+          return "Full Day (Completed)";
+        } else if (completedMinutes >= halfDayThreshold) {
+          return "More than Half Day";
+        } else {
+          return "Less than Half Day";
+        }
+      }
+
+      getDayTypeClass(dayType) {
+        if (dayType.includes("Full Day")) return "full-day";
+        if (dayType.includes("More than Half")) return "more-than-half";
+        return "half-day";
+      }
+
+      formatTime12Hour(date) {
+        return date.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: true
+        });
+      }
+
+      formatTime24Hour(date) {
+        return date.toLocaleTimeString('en-US', {
+          hour: '2-digit',
+          minute: '2-digit',
+          hour12: false
+        });
+      }
+
+      showError(message) {
+        this.errorDiv.textContent = message;
+        this.errorDiv.classList.remove('hidden');
+        // animate shake
+        requestAnimationFrame(() => {
+          this.errorDiv.classList.remove('show');
+          void this.errorDiv.offsetWidth; // reflow
+          this.errorDiv.classList.add('show');
+        });
+        this.resultsDiv.classList.add('hidden');
+        this.resultsDiv.classList.remove('visible');
+      }
+
+      hideError() {
+        this.errorDiv.classList.add('hidden');
+      }
+
+      calculate() {
+        try {
+          this.hideError();
+
+          const completedHours = document.getElementById('completedHours').value.trim();
+          const lastLogTime = document.getElementById('lastLogTime').value.trim();
+          const targetHours = parseInt(document.getElementById('targetHours').value);
+
+          // Validate inputs
+          if (!completedHours || !lastLogTime) {
+            throw new Error('Please fill in all fields.');
+          }
+
+          if (!/^\d{1,2}:\d{2}$/.test(completedHours)) {
+            throw new Error('Please enter completed hours in HH:MM format (e.g., 5:33).');
+          }
+
+          // Get current time
+          const now = new Date();
+
+          // Convert completed hours to minutes
+          const completedMinutes = this.timeToMinutes(completedHours);
+          const targetMinutes = targetHours * 60;
+
+          // Parse last log time
+          const lastLogDt = this.parseTimeWithAmPm(lastLogTime);
+          if (isNaN(lastLogDt.getTime())) {
+            throw new Error('Invalid last log time format. Use HH:MM or HH:MM AM/PM.');
+          }
+
+          // Create today's datetime for last log
+          const lastLogToday = new Date(
+            now.getFullYear(),
+            now.getMonth(),
+            now.getDate(),
+            lastLogDt.getHours(),
+            lastLogDt.getMinutes()
+          );
+
+          // Calculate hours since last clock-in
+          const timeSinceClockIn = now - lastLogToday;
+          const minutesSinceClockIn = Math.max(0, Math.floor(timeSinceClockIn / (1000 * 60)));
+
+          // Calculate total hours worked until now
+          const totalMinutesNow = completedMinutes + minutesSinceClockIn;
+
+          // Calculate remaining time needed
+          const remainingMinutes = Math.max(0, targetMinutes - totalMinutesNow);
+
+          // Time to stay in office (from current time)
+          const timeToStayMinutes = Math.max(0, targetMinutes - totalMinutesNow);
+
+          // Calculate completion time
+          const completionTime = new Date(now.getTime() + timeToStayMinutes * 60000);
+
+          // Determine day type based on current total
+          const dayType = this.determineDayType(totalMinutesNow, targetMinutes);
+
+          // Percentage completed (based on current total)
+          const percentageCompleted = Math.round((totalMinutesNow / targetMinutes) * 1000) / 10;
+
+          // Check for overtime
+          const isOvertime = totalMinutesNow >= targetMinutes;
+
+          // Display results
+          this.displayResults({
+            completedHours,
+            lastLogTime,
+            lastLog24: this.formatTime24Hour(lastLogToday),
+            hoursSinceClockIn: this.minutesToTime(minutesSinceClockIn),
+            totalHoursNow: this.minutesToTime(totalMinutesNow),
+            remainingHours: this.minutesToTime(remainingMinutes),
+            timeToStay: timeToStayMinutes > 0 ? this.minutesToTime(timeToStayMinutes) : "0:00 (Target Achieved!)",
+            completionTime12: this.formatTime12Hour(completionTime),
+            completionTime24: this.formatTime24Hour(completionTime),
+            completionDateTime: completionTime.toLocaleString(),
+            dayType,
+            percentageCompleted: isFinite(percentageCompleted) ? Math.max(0, Math.min(1000, percentageCompleted)) : 0,
+            isOvertime,
+            overtimeHours: isOvertime ? this.minutesToTime(totalMinutesNow - targetMinutes) : null
+          });
+
+        } catch (error) {
+          this.showError(error.message || String(error));
+        }
+      }
+
+      displayResults(result) {
+        // Day type chip
+        const dayTypeEl = document.getElementById('dayType');
+        dayTypeEl.textContent = result.dayType;
+        dayTypeEl.className = `day-type ${this.getDayTypeClass(result.dayType)}`;
+
+        // Percentage + progress bar
+        const pct = Math.max(0, Math.min(100, Number(result.percentageCompleted)));
+        document.getElementById('percentage').textContent = `${pct}%`;
+        if (this.progressBar) {
+          this.progressBar.style.width = `${pct}%`;
+          this.progressBar.setAttribute('aria-valuenow', String(pct));
+        }
+
+        // Session and totals
+        document.getElementById('lastLog24').textContent = result.lastLog24;
+        document.getElementById('hoursSinceClockIn').textContent = result.hoursSinceClockIn;
+        document.getElementById('totalHoursNow').textContent = result.totalHoursNow;
+
+        // Completion details
+        document.getElementById('remainingHours').textContent = result.remainingHours;
+        document.getElementById('timeToStay').textContent = result.timeToStay;
+        document.getElementById('completionTime').textContent = `${result.completionTime12} (${result.completionTime24})`;
+        document.getElementById('completionDateTime').textContent = result.completionDateTime;
+
+        // Overtime section
+        const overtimeSection = document.getElementById('overtimeSection');
+        if (result.isOvertime) {
+          document.getElementById('overtimeHours').textContent = result.overtimeHours;
+          overtimeSection.classList.remove('hidden');
+          dayTypeEl.className = 'day-type overtime';
+
+          // Highlight timeToStay
+          const timeToStayElement = document.getElementById('timeToStay');
+          timeToStayElement.innerHTML = '<span class="highlight">0:00 (Target Achieved!)</span>';
+        } else {
+          overtimeSection.classList.add('hidden');
+        }
+
+        // Reveal results with animation and scroll into view
+        this.resultsDiv.classList.remove('hidden');
+        requestAnimationFrame(() => this.resultsDiv.classList.add('visible'));
+        this.resultsDiv.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+      }
+    }
+
+    // Initialize the calculator when the page loads
+    document.addEventListener('DOMContentLoaded', () => {
+      new AdvancedWorkHoursCalculator();
+    });
+  </script>
+</body>
+</html>
